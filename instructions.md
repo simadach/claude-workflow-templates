@@ -10,16 +10,24 @@ Mac mini spec_watcher_cron.sh（10分ごと）が spec の変更を検知
   ↓
 Claude Code が自動査読 → REVIEW.md 生成 → git push（プロジェクト repo）
   ↓
-claudeflow vault の reviews/{project}/REVIEW.md にも push
+vault reviews/{project}/{spec_stem}/ に REVIEW.md + 仕様書原文を push
   ↓
-iPhone Obsidian Git が自動 pull で受信
+iPhone Obsidian Git が自動 pull で受信（仕様書も読める）
   ↓
 [x] マークを付けて保存 → Obsidian Git が自動 push
   ↓
 spec_watcher_cron.sh が vault の [x] 変更を検知 → apply.sh 起動
   ↓
 Claude Code が承認項目のみ実装反映 → git push
+  ↓
+vault: 仕様書を最新版に更新 + REVIEW.md を archive/ に退避 → push
 ```
+
+### v2.1 変更点（vault 構造・Obsidian 仕様書閲覧対応）
+
+- vault REVIEW パス: `reviews/{project}/REVIEW.md` → `reviews/{project}/{spec_stem}/REVIEW.md`
+- 仕様書原文を vault に配置（Obsidian で仕様書を読める）
+- 適用後: REVIEW.md を `archive/REVIEW_YYYY-MM-DD.md` に退避・仕様書を最新版に更新
 
 ### v2.0 変更点（iCloud → Obsidian Git 移行）
 
@@ -66,9 +74,20 @@ claudeflow/
 ├── SPEC.md                   # Mac 側実装仕様書
 ├── reviews/
 │   ├── homeassistant-dev/
-│   │   └── REVIEW.md        ← iPhone Obsidian Git はここを見る
+│   │   ├── ha_energy_plan/
+│   │   │   ├── ha_energy_plan.md  ← 常に最新仕様書（Obsidian で読む）
+│   │   │   ├── REVIEW.md          ← 査読中のみ存在
+│   │   │   └── archive/
+│   │   │       └── REVIEW_2026-06-20.md
+│   │   └── home_state/
+│   │       ├── spec.md
+│   │       ├── REVIEW.md
+│   │       └── archive/
 │   └── teslamate/
-│       └── REVIEW.md
+│       └── CLAUDE/
+│           ├── CLAUDE.md
+│           ├── REVIEW.md
+│           └── archive/
 └── templates/
 ```
 
@@ -80,7 +99,8 @@ claudeflow/
 | サブプロジェクト仕様書 | `{sub_id}/spec.md` | **Claude Web UI** |
 | メイン査読結果 | `REVIEW.md` | Claude Code（触らない） |
 | サブ査読結果 | `{sub_id}/REVIEW.md` | Claude Code（触らない） |
-| vault REVIEW | `reviews/{slug}/REVIEW.md` | Claude Code（触らない） |
+| vault REVIEW | `reviews/{slug}/{spec_stem}/REVIEW.md` | Claude Code（触らない） |
+| vault 仕様書 | `reviews/{slug}/{spec_stem}/{spec_file}` | Claude Code（触らない） |
 
 ### .claudeflow.yaml の構造
 
@@ -216,8 +236,9 @@ push 先のパスは `{sub_id}/spec.md`（フォルダ内）。
 1. 各項目をユーザーと一緒に読む
 2. 🔴 要対応の優先度・影響範囲を解説
 3. ユーザーが「承認」「スキップ」を決めるのをサポート
-4. 「Obsidian の `reviews/{project}/REVIEW.md` で `[x]` をつけて保存すると
-   Obsidian Git が自動 push → 10分以内に apply.sh が実装に反映します」と説明
+4. 「Obsidian の `reviews/{project}/{spec_stem}/REVIEW.md` で `[x]` をつけて保存すると
+   Obsidian Git が自動 push → 10分以内に apply.sh が実装に反映します。
+   反映後は REVIEW.md が archive/ に退避され、仕様書が最新版に更新されます」と説明
 
 ---
 
